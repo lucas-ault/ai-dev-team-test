@@ -1,0 +1,6 @@
+node_modules/
+data/books.json
+data/*.tmp
+data/.*.tmp
+npm-debug.log*
+.DS_Store
