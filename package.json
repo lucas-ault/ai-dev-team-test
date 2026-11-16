@@ -1,0 +1,17 @@
+{
+  "name": "ai-dev-team-test",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Reading-list app backend (core-reading-list sprint)",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test \"test/*.test.js\""
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
