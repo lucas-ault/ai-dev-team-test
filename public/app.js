@@ -78,7 +78,8 @@
       return;
     }
 
-    books.push(book);
+    // Per the API contract, POST returns { book: {...} } — unwrap it.
+    books.push(logic.bookFromResponse(book));
     logic.renderList(books, listEl);
     titleInput.value = '';
     authorInput.value = '';
@@ -95,7 +96,8 @@
       }, 'Failed to update book.');
       var index = books.findIndex(function (b) { return String(b.id) === String(id); });
       if (index !== -1) {
-        books[index] = book;
+        // Per the API contract, PATCH returns { book: {...} } — unwrap it.
+        books[index] = logic.bookFromResponse(book);
       }
     } catch (err) {
       // Book may have been deleted elsewhere; resync from the server.

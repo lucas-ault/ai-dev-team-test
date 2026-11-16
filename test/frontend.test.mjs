@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 // app-logic.js is a UMD module: in Node it resolves to module.exports.
 import logic from '../public/app-logic.js';
 
-const { buildBookRow, renderList, escapeHtml, statusLabel } = logic;
+const { buildBookRow, renderList, escapeHtml, statusLabel, bookFromResponse } = logic;
 
 const unreadBook = {
   id: 'b1',
@@ -106,4 +106,32 @@ test('statusLabel maps statuses to human-readable labels', () => {
 
 test('escapeHtml neutralises markup-significant characters', () => {
   assert.equal(escapeHtml('<b>&"\'</b>'), '&lt;b&gt;&amp;&quot;&#39;&lt;/b&gt;');
+});
+
+test('bookFromResponse unwraps the contract\'s { book: {...} } response shape', () => {
+  // Exact shape T-1's server returns for POST 201 and PATCH 200.
+  const wrapped = { book: { ...unreadBook } };
+  const unwrapped = bookFromResponse(wrapped);
+
+  assert.deepEqual(unwrapped, unreadBook);
+  assert.notEqual(unwrapped, wrapped);
+  // Regression guard: a wrapped response rendered directly produced
+  // data-id="undefined" and broke toggle/delete.
+  const row = buildBookRow(unwrapped);
+  assert.match(row, /data-id="b1"/);
+  assert.match(row, /class="book-title"[^>]*>The Pragmatic Programmer</);
+});
+
+test('bookFromResponse passes through bare book objects unchanged', () => {
+  assert.deepEqual(bookFromResponse({ ...readBook }), readBook);
+});
+
+test('bookFromResponse tolerates null/undefined data', () => {
+  assert.equal(bookFromResponse(null), null);
+  assert.equal(bookFromResponse(undefined), undefined);
+});
+
+test('bookFromResponse does not treat a GET list array as a wrapper', () => {
+  const list = [unreadBook, readBook];
+  assert.deepEqual(bookFromResponse(list), list);
 });

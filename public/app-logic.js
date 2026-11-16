@@ -40,6 +40,20 @@
   }
 
   /**
+   * Extract the book object from a successful POST/PATCH response.
+   * Per the API contract these return { book: {...} }; tolerate a bare
+   * book object too, so a contract drift fails loudly in the UI tests
+   * instead of silently rendering "undefined".
+   */
+  function bookFromResponse(data) {
+    if (data && typeof data === 'object' && data.book &&
+        typeof data.book === 'object' && !Array.isArray(data.book)) {
+      return data.book;
+    }
+    return data;
+  }
+
+  /**
    * Build the HTML for a single book row (an <li>).
    * Pure function: returns a string, touches no DOM.
    */
@@ -85,6 +99,7 @@
   return {
     escapeHtml: escapeHtml,
     statusLabel: statusLabel,
+    bookFromResponse: bookFromResponse,
     buildBookRow: buildBookRow,
     renderList: renderList
   };
