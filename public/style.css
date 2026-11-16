@@ -1,0 +1,161 @@
+:root {
+  --text: #1f2933;
+  --muted: #6b7280;
+  --border: #d1d5db;
+  --bg: #f9fafb;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --danger: #dc2626;
+  --danger-hover: #b91c1c;
+  --read-bg: #ecfdf5;
+  --read-text: #047857;
+  --unread-bg: #fef9c3;
+  --unread-text: #854d0e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.container {
+  max-width: 640px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+h1 {
+  font-size: 1.75rem;
+  margin-bottom: 1rem;
+}
+
+/* --- Add form --- */
+#add-book-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+#add-book-form input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+#add-book-form button {
+  padding: 0.5rem 1.25rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+#add-book-form button:hover {
+  background: var(--accent-hover);
+}
+
+/* --- Error message --- */
+.error-message {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+.error-message[hidden] {
+  display: none;
+}
+
+/* --- Book list --- */
+.book-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.book-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  margin-bottom: 0.5rem;
+}
+
+.book-title {
+  font-weight: 600;
+  flex: 1 1 auto;
+  overflow-wrap: anywhere;
+}
+
+.book-author {
+  color: var(--muted);
+  flex: 0 1 auto;
+  overflow-wrap: anywhere;
+}
+
+.book-status {
+  flex: 0 0 auto;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.book-row.read .book-status {
+  background: var(--read-bg);
+  color: var(--read-text);
+}
+
+.book-row.unread .book-status {
+  background: var(--unread-bg);
+  color: var(--unread-text);
+}
+
+.book-row.read .book-title {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.book-row button {
+  flex: 0 0 auto;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.book-row button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.book-row .delete-btn:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.empty-state {
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--muted);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+}
