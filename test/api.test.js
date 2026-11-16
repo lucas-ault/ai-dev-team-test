@@ -94,6 +94,52 @@ test('GET /books returns all; ?status=unread|read filters; unknown → all', asy
   });
 });
 
+test('?status= with mixed-status fixtures (2 unread + 1 read) returns exact partitions', async () => {
+  await withServer(async (base) => {
+    // 2 unread + 1 read: create three books, mark one read.
+    const created = [];
+    for (const [title, author] of [
+      ['Unread One', 'A'],
+      ['Read One', 'B'],
+      ['Unread Two', 'C'],
+    ]) {
+      const { body } = await post(base, { title, author });
+      assert.equal(body.book.status, 'unread');
+      created.push(body.book);
+    }
+    const toRead = created.find((b) => b.title === 'Read One');
+    const patchRes = await fetch(`${base}/books/${toRead.id}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ status: 'read' }),
+    });
+    assert.equal(patchRes.status, 200);
+
+    // ?status=unread → exactly the two unread books
+    let res = await fetch(`${base}/books?status=unread`);
+    assert.equal(res.status, 200);
+    let unread = await res.json();
+    assert.equal(unread.length, 2);
+    assert.deepEqual(unread.map((b) => b.title).sort(), ['Unread One', 'Unread Two']);
+    for (const b of unread) assert.equal(b.status, 'unread');
+
+    // ?status=read → exactly the one read book
+    res = await fetch(`${base}/books?status=read`);
+    assert.equal(res.status, 200);
+    const read = await res.json();
+    assert.equal(read.length, 1);
+    assert.equal(read[0].title, 'Read One');
+    assert.equal(read[0].status, 'read');
+
+    // No filter → all three; ids never leak across partitions
+    res = await fetch(`${base}/books`);
+    const all = await res.json();
+    assert.equal(all.length, 3);
+    const unreadIds = new Set(unread.map((b) => b.id));
+    for (const b of read) assert.ok(!unreadIds.has(b.id), 'read/unread partitions are disjoint');
+  });
+});
+
 test('PATCH: invalid status → 400, unknown id → 404, valid update returns book', async () => {
   await withServer(async (base) => {
     const { body } = await post(base, { title: 'T', author: 'A' });
