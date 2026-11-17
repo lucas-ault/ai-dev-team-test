@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reading List</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="container">
+    <h1>Reading List</h1>
+
+    <form id="add-book-form" aria-label="Add a book">
+      <input
+        type="text"
+        id="title-input"
+        name="title"
+        placeholder="Title"
+        autocomplete="off">
+      <input
+        type="text"
+        id="author-input"
+        name="author"
+        placeholder="Author"
+        autocomplete="off">
+      <button type="submit" id="add-button">Add</button>
+    </form>
+
+    <div id="error-message" class="error-message" role="alert" hidden></div>
+
+    <div id="filter-bar" class="filter-bar" role="group" aria-label="Filter books by status"></div>
+
+    <ul id="book-list" class="book-list"></ul>
+  </main>
+
+  <script src="/app-logic.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
