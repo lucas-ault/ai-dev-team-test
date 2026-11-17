@@ -54,6 +54,59 @@
   }
 
   /**
+   * Valid filter values for the status filter UI, in display order.
+   */
+  var FILTERS = ['all', 'unread', 'read'];
+
+  /**
+   * Normalize a filter value. Unknown/missing values fall back to 'all'.
+   * @param {string} value
+   * @returns {'all'|'unread'|'read'}
+   */
+  function normalizeFilter(value) {
+    return FILTERS.includes(value) ? value : 'all';
+  }
+
+  /**
+   * Build the books-list URL for a filter. 'all' (or unknown) means no
+   * ?status= param, so the server returns every book.
+   * @param {string} baseUrl e.g. '/api/books'
+   * @param {string} filter 'all' | 'unread' | 'read'
+   */
+  function buildBooksUrl(baseUrl, filter) {
+    var normalized = normalizeFilter(filter);
+    if (normalized === 'all') return baseUrl;
+    return baseUrl + '?status=' + normalized;
+  }
+
+  /**
+   * Build the HTML for the filter bar. The active filter gets the
+   * "active" class and aria-pressed="true" so both sighted users and
+   * assistive tech can see the current selection.
+   * Pure function: returns a string, touches no DOM unless a container
+   * is passed (same contract as renderList).
+   * @param {string} activeFilter
+   * @param {HTMLElement|{innerHTML: string}} [container]
+   */
+  function renderFilterBar(activeFilter, container) {
+    var active = normalizeFilter(activeFilter);
+    var html = FILTERS.map(function (filter) {
+      var isActive = filter === active;
+      return (
+        '<button type="button" class="filter-btn' + (isActive ? ' active' : '') + '"' +
+        ' data-filter="' + filter + '"' +
+        ' aria-pressed="' + (isActive ? 'true' : 'false') + '">' +
+        filter.charAt(0).toUpperCase() + filter.slice(1) +
+        '</button>'
+      );
+    }).join('');
+    if (container) {
+      container.innerHTML = html;
+    }
+    return html;
+  }
+
+  /**
    * Build the HTML for a single book row (an <li>).
    * Pure function: returns a string, touches no DOM.
    */
@@ -83,10 +136,12 @@
    * Render the list of books into a container element.
    * Returns the generated HTML string; only mutates `container.innerHTML`.
    */
-  function renderList(books, container) {
+  function renderList(books, container, emptyMessage) {
     var html;
     if (!Array.isArray(books) || books.length === 0) {
-      html = '<li class="empty-state">No books yet. Add one above!</li>';
+      html = '<li class="empty-state">' +
+        escapeHtml(emptyMessage || 'No books yet. Add one above!') +
+        '</li>';
     } else {
       html = books.map(buildBookRow).join('');
     }
@@ -101,6 +156,9 @@
     statusLabel: statusLabel,
     bookFromResponse: bookFromResponse,
     buildBookRow: buildBookRow,
-    renderList: renderList
+    renderList: renderList,
+    normalizeFilter: normalizeFilter,
+    buildBooksUrl: buildBooksUrl,
+    renderFilterBar: renderFilterBar
   };
 }));

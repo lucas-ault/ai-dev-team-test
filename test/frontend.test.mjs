@@ -135,3 +135,67 @@ test('bookFromResponse does not treat a GET list array as a wrapper', () => {
   const list = [unreadBook, readBook];
   assert.deepEqual(bookFromResponse(list), list);
 });
+
+const { normalizeFilter, buildBooksUrl, renderFilterBar } = logic;
+
+test('normalizeFilter accepts valid filters and falls back to "all"', () => {
+  assert.equal(normalizeFilter('all'), 'all');
+  assert.equal(normalizeFilter('unread'), 'unread');
+  assert.equal(normalizeFilter('read'), 'read');
+  assert.equal(normalizeFilter('bogus'), 'all');
+  assert.equal(normalizeFilter(undefined), 'all');
+  assert.equal(normalizeFilter(''), 'all');
+});
+
+test('buildBooksUrl appends ?status= for unread/read and none for all', () => {
+  assert.equal(buildBooksUrl('/api/books', 'all'), '/api/books');
+  assert.equal(buildBooksUrl('/api/books', 'unread'), '/api/books?status=unread');
+  assert.equal(buildBooksUrl('/api/books', 'read'), '/api/books?status=read');
+  // Unknown filters normalize to 'all' → no query param.
+  assert.equal(buildBooksUrl('/api/books', 'bogus'), '/api/books');
+});
+
+test('renderFilterBar renders All/Unread/Read buttons with data-filter attrs', () => {
+  const html = renderFilterBar('all');
+
+  assert.match(html, /class="filter-btn active"[^>]*data-filter="all"[^>]*>All</);
+  assert.match(html, /class="filter-btn"[^>]*data-filter="unread"[^>]*>Unread</);
+  assert.match(html, /class="filter-btn"[^>]*data-filter="read"[^>]*>Read</);
+  const buttons = html.match(/<button type="button" class="filter-btn/g) || [];
+  assert.equal(buttons.length, 3);
+});
+
+test('renderFilterBar marks only the active filter with .active and aria-pressed', () => {
+  const html = renderFilterBar('unread');
+
+  // Exactly one active button, and it is the unread one.
+  const active = html.match(/class="filter-btn active"/g) || [];
+  assert.equal(active.length, 1);
+  assert.match(html, /class="filter-btn active"[^>]*data-filter="unread"/);
+  assert.match(html, /data-filter="unread"[^>]*aria-pressed="true"/);
+  assert.match(html, /data-filter="all"[^>]*aria-pressed="false"/);
+  assert.match(html, /data-filter="read"[^>]*aria-pressed="false"/);
+
+  // Moving the active filter moves the indicator.
+  const readActive = renderFilterBar('read');
+  assert.match(readActive, /class="filter-btn active"[^>]*data-filter="read"/);
+  assert.ok(!readActive.includes('data-filter="unread" aria-pressed="true"'));
+});
+
+test('renderFilterBar writes into a container and tolerates unknown filters', () => {
+  const container = { innerHTML: '' };
+  const html = renderFilterBar('nonsense', container);
+  assert.equal(container.innerHTML, html);
+  // Unknown → 'all' is active by default.
+  assert.match(html, /class="filter-btn active"[^>]*data-filter="all"/);
+});
+
+test('renderList uses the caller-supplied empty message when a filter is active', () => {
+  const container = { innerHTML: '' };
+  const html = renderList([], container, 'No unread books.');
+  assert.match(html, /class="empty-state"/);
+  assert.match(html, /No unread books\./);
+  assert.ok(!html.includes('No books yet'));
+  // Default message unchanged when none is supplied.
+  assert.match(renderList([], container), /No books yet\. Add one above!/);
+});

@@ -12,9 +12,13 @@
   var authorInput = document.getElementById('author-input');
   var errorBox = document.getElementById('error-message');
   var listEl = document.getElementById('book-list');
+  var filterBar = document.getElementById('filter-bar');
 
   /** Local mirror of the server's book list; re-rendered on every change. */
   var books = [];
+
+  /** Currently active status filter: 'all' | 'unread' | 'read'. */
+  var currentFilter = 'all';
 
   function showError(message) {
     errorBox.textContent = message;
@@ -54,8 +58,20 @@
   }
 
   async function loadBooks() {
-    books = await request(API_URL, { method: 'GET' }, 'Failed to load books.');
-    logic.renderList(books, listEl);
+    books = await request(
+      logic.buildBooksUrl(API_URL, currentFilter),
+      { method: 'GET' },
+      'Failed to load books.'
+    );
+    renderBooks();
+  }
+
+  /** Re-render the list from the local mirror under the current filter. */
+  function renderBooks() {
+    var emptyMessage = currentFilter === 'all'
+      ? undefined
+      : 'No ' + currentFilter + ' books.';
+    logic.renderList(books, listEl, emptyMessage);
   }
 
   async function addBook(event) {
@@ -79,8 +95,14 @@
     }
 
     // Per the API contract, POST returns { book: {...} } — unwrap it.
-    books.push(logic.bookFromResponse(book));
-    logic.renderList(books, listEl);
+    // New books are always unread, so they only join the local mirror
+    // when the current filter would show them; otherwise re-fetch.
+    if (currentFilter === 'all') {
+      books.push(logic.bookFromResponse(book));
+      renderBooks();
+    } else {
+      await loadBooks();
+    }
     titleInput.value = '';
     authorInput.value = '';
     titleInput.focus();
@@ -94,10 +116,10 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: nextStatus })
       }, 'Failed to update book.');
+      var updated = logic.bookFromResponse(book);
       var index = books.findIndex(function (b) { return String(b.id) === String(id); });
       if (index !== -1) {
-        // Per the API contract, PATCH returns { book: {...} } — unwrap it.
-        books[index] = logic.bookFromResponse(book);
+        books[index] = updated;
       }
     } catch (err) {
       // Book may have been deleted elsewhere; resync from the server.
@@ -105,7 +127,13 @@
       showError(err.message);
       return;
     }
-    logic.renderList(books, listEl);
+    // A toggle can move a book out of the active filter (e.g. marking a
+    // book read while the Unread filter is on) — re-fetch in that case.
+    if (currentFilter !== 'all' && currentFilter !== updated.status) {
+      await loadBooks();
+      return;
+    }
+    renderBooks();
   }
 
   async function deleteBook(id) {
@@ -137,6 +165,22 @@
   });
 
   form.addEventListener('submit', addBook);
+
+  // Filter bar: clicking a button switches the active filter, re-renders
+  // the bar (moving the active indicator), and re-fetches from the API.
+  filterBar.addEventListener('click', function (event) {
+    var button = event.target.closest('button[data-filter]');
+    if (!button) return;
+    var filter = logic.normalizeFilter(button.getAttribute('data-filter'));
+    if (filter === currentFilter) return;
+    currentFilter = filter;
+    logic.renderFilterBar(currentFilter, filterBar);
+    loadBooks().catch(function (err) {
+      showError(err.message);
+    });
+  });
+
+  logic.renderFilterBar(currentFilter, filterBar);
 
   loadBooks().catch(function (err) {
     showError(err.message);
